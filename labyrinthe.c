@@ -5,8 +5,8 @@
 
 /*Premiere partie*/
 
-int lignIA(char* IA, int len) {
-  int LA[len];
+char* lignIA(char* IA, int len) {
+  unsigned char* LA = (unsigned char*) malloc(len*sizeof(unsigned char));
   int cpt=0;
   int temp;
   for (int k=1; k<sizeof(IA); ++k) {
@@ -21,8 +21,23 @@ int lignIA(char* IA, int len) {
   return LA;
 }
 
-labyrinthe creerMatrice (unsigned int lignes, unsigned int colonnes, char* A, char* IA, char* JA){
-  labyrinthe tab[lignes][colonnes];
+labyrinthe creerMatrice(unsigned int lignes, unsigned int colonnes, char* A, char* IA, char* JA){
+  labyrinthe tab = (unsigned char **) malloc(lignes*sizeof(unsigned char *));
+  for(unsigned short i=0; i<lignes; ++i)
+    tab[i]=(unsigned char *) malloc(colonnes*sizeof(unsigned char));
+
+  for(unsigned short k=0; k<lignes; ++k) {
+    for(unsigned short l=0; l<colonnes; ++l) {
+      tab[k][l] = 0;
+    }
+  }
+  char* LA = lignIA(IA, sizeof(JA));
+  for (int coord=0; coord<sizeof(JA); coord++)     // ATTRIBUE APRES QUE TOUT SOIT A ZERO, QUE CHOISIR ?
+    tab[LA[coord]][JA[coord]] = A[coord];
+  return tab;
+  /*char buffer[8192];
+  setvbuf(stdout, buffer, _IOFBF, sizeof(buffer));*/
+/*  labyrinthe tab[lignes][colonnes];
   int cpt=0;
   char* LA = lignIA(IA, sizeof(JA));
   for (int l=0; l<lignes; ++l) {
@@ -37,16 +52,19 @@ labyrinthe creerMatrice (unsigned int lignes, unsigned int colonnes, char* A, ch
     }
   }
   //for (int coord=0; coord<sizeof(JA); coord++)     // ATTRIBUE APRES QUE TOUT SOIT A ZERO, QUE CHOISIR ?
-    //tab[LA[coord]][JA[coord]] = A[coord];
-  return tab;
+  //  tab[LA[coord]][JA[coord]] = A[coord];
+  return tab;  */
 }
 
 void afficherMatrice(labyrinthe lab, unsigned int lignes, unsigned int colonnes ){
-  for (int l=0; l<lignes; ++l) {
-    printf("\n\n");
-    for (int c=0; c<colonnes; ++c)
+  char buffer[8192];
+  setvbuf(stdout, buffer, _IOFBF, sizeof(buffer));
+  for (unsigned short l=0; l<lignes; ++l) {
+    printf("\n");
+    for (unsigned short c=0; c<colonnes; ++c)
       printf("%d ", lab[l][c]);
   }
+  printf("\n");
 }
 
 int deplacementsPossibles(labyrinthe lab, unsigned int largeur, unsigned int longueur, coordonnee_t posCourante, coordonnee_t* coordPossibles){
@@ -92,13 +110,13 @@ int deplacementsPossibles(labyrinthe lab, unsigned int largeur, unsigned int lon
       }
     }
   }
-  return coordPossibles;
+  return cpt;
 }
 
 char verifierChemin(chemin_t ch, labyrinthe lab, unsigned int largeur, unsigned int longueur, coordonnee_t depart ){
   if(ch.taille<2)    // AU MINIMUM DEPART ---> ARRIVEE
     return 0;
-  for(int k=0; k<ch.taille; ++k) { 
+  for(int k=0; k<ch.taille; ++k) {
     if(ch.coordonnees[k].ligne < 0 || ch.coordonnees[k].colonne < 0)  // VERIFICATION QU'ON NE SORS PAS DU LABYRINTHE EN HAUT ET A DROITE
       return 0;
     if(ch.coordonnees[k].ligne >= (sizeof(lab)/sizeof(lab[0])) || ch.coordonnees[k].colonne >= sizeof(lab[0]))    // IDEM A GAUCHE ET EN BAS
@@ -110,7 +128,8 @@ char verifierChemin(chemin_t ch, labyrinthe lab, unsigned int largeur, unsigned 
       departTEMP.ligne = ch.coordonnees[k-1].ligne;
       departTEMP.colonne = ch.coordonnees[k-1].colonne;
     }
-    coordonnee_t* coordPossibles = deplacementsPossibles(lab, largeur, longueur, departTEMP, coordPossibles);
+    coordonnee_t* coordPossibles;
+    deplacementsPossibles(lab, largeur, longueur, departTEMP, coordPossibles);
     int cnd = 0;
     for(int i=0; i<sizeof(coordPossibles); i++) {
       if(ch.coordonnees[k].ligne == coordPossibles[i].ligne && ch.coordonnees[k].colonne == coordPossibles[i].colonne)    // VERIFICATION QUE CHAQUE DEPLACEMENTS EST POSSIBLE EN PARTANT DE LA POSITION LE PRECEDANT
@@ -124,19 +143,16 @@ char verifierChemin(chemin_t ch, labyrinthe lab, unsigned int largeur, unsigned 
   }
   if(lab[ch.coordonnees[-1].ligne][ch.coordonnees[-1].colonne] !=2)    // VERIFICATION QUE LE DERNIER TERME MENE A UN 2
       return 0;
-  
+
   if(lab[depart.ligne][depart.colonne]!=0) // VERIFICATION QUE LE DERNIER TERME MENE A UN 0
     return 0;
   return 1;
 }
 
 void afficherChemin(chemin_t ch ){
-  printf("Depart ligne: %d , colonne: %d.\n", ch.coordonnees[0].ligne, ch.coordonnees[0].colonne);
-  if(ch.taille>2) {  // SI IL Y A DES LIGNES ENTRE 'DEPART' ET 'ARRIVEE'
-    for(int k=1; k<ch.taille-1; ++k)
-      printf("Puis ligne: %d , colonne: %d.\n", ch.coordonnees[k].ligne, ch.coordonnees[k].colonne);
-  }
-  printf("Arrivee ligne: %d , colonne: %d.\n", ch.coordonnees[-1].ligne, ch.coordonnees[-1].colonne);
+  for(int k=0; k<ch.taille-1; ++k)
+    printf("(%d,%d),", ch.coordonnees[k].ligne, ch.coordonnees[k].colonne);
+  printf("(%d,%d)", ch.coordonnees[ch.taille-1].ligne, ch.coordonnees[ch.taille-1].colonne);
 }
 
 
