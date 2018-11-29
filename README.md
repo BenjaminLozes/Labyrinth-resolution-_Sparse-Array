@@ -1,2 +1,2 @@
-# Labyrinth-resolution-_Sparse-Array
-Resolution methods for a labyrinth simulated with a sparse array
+# Labyrinth-resolution_Sparse-Array
+Resolution method for a labyrinth simulated based on a sparse array.
