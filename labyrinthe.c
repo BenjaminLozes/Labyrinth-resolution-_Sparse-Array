@@ -3,6 +3,10 @@
 #include "labyrinthe.h"
 #include <math.h>
 
+typedef struct CHEMINTAB {
+  int size; 
+  chemin_t* chList;
+} chTab_t;
 /*Premiere partie*/
 
 
@@ -134,83 +138,21 @@ void afficherChemin(chemin_t ch ){
   for(int k=0; k<ch.taille-1; ++k) {
     printf("(%d,%d), ", ch.coordonnees[k].ligne, ch.coordonnees[k].colonne);
   }
-  printf("(%d,%d).", ch.coordonnees[ch.taille-1].ligne, ch.coordonnees[ch.taille-1].colonne);
+  printf("(%d,%d).\n", ch.coordonnees[ch.taille-1].ligne, ch.coordonnees[ch.taille-1].colonne);
 }
 
 
 /*Seconde partie*/
 
-unsigned int completeM2(labyrinthe M2, unsigned int size, coordonnee_t* coordPossibles, unsigned int len, unsigned int index, chemin_t ch) {
-  //printf("ENTREE EN COMPLETEM2 \n");
-  for(int i=0; i<len; ++i) {
-    //printf("coorPoss: (%d,%d)\n", coordPossibles[i].ligne, coordPossibles[i].colonne);
-  }
-  unsigned int cpt = 0;
-  unsigned char dejaDepart = 0;
-  for(int k=0; k<len; ++k) {
-    dejaDepart = 0;
-    if((coordPossibles[k].ligne == ch.coordonnees[0].ligne) && (coordPossibles[k].colonne == ch.coordonnees[0].colonne))
-      dejaDepart = 1;
-    if((M2[coordPossibles[k].ligne][coordPossibles[k].colonne] == 0 && dejaDepart == 0) || (M2[coordPossibles[k].ligne][coordPossibles[k].colonne] > index)) {
-      M2[coordPossibles[k].ligne][coordPossibles[k].colonne] = index;
-      coordPossibles[cpt].ligne = coordPossibles[k].ligne;
-      coordPossibles[cpt].colonne = coordPossibles[k].colonne;
-      cpt++;
-    }
-  }
-  if(cpt <3)
-    return cpt;
-  return 2;
-}
-
-int checkWin(labyrinthe lab, coordonnee_t* possibles, int len) {
-  for(int k=0; k<len; ++k) {
-    if(lab[possibles[k].ligne][possibles[k].colonne] == 2)
-      return k;
-  }
-  return 0;
-}
-
-void recurParcourir(labyrinthe lab, labyrinthe M2, unsigned int size, chemin_t ch, unsigned int index) {
-  //printf("(%d,%d)  ", ch.coordonnees[ch.taille-1].ligne, ch.coordonnees[ch.taille-1].colonne);
-  afficherMatrice(M2, size, size);
-  index++;
-  coordonnee_t* possibles = (coordonnee_t *) malloc(8*sizeof(int));
-  unsigned int len;
-  len = deplacementsPossibles(lab, size, size, ch.coordonnees[ch.taille-1], possibles);
-  if(len == 0) {
-    return M2;
-  }
-  len = completeM2(M2, size, possibles, len, index, ch);
-  if(len == 0) {
-    return M2;
-  }
-  ch.taille++;
-  for(int i=0; i<len; ++i) {
-    if(size*size < ch.taille)   // EXPLAIN
-      return M2;
-    ch.coordonnees[ch.taille-1] = possibles[i];
-    recurParcourir(lab, M2, size, ch, index);
-    /*printf("\n");
-    for(int k=0; k<ch.taille-1; ++k)
-      printf("       ");*/
-  }
-}
-
 chemin_t incrChemin(chemin_t chemin, coordonnee_t point) {
-  chemin.coordonnees[chemin.taille].ligne = point.ligne;
-  chemin.coordonnees[chemin.taille].colonne = point.colonne;
-  chemin.taille++;
+  chemin.coordonnees[chemin.taille++] = point;
   return chemin;
 }
 
-chemin_t init_chemin(coordonnee_t depart, unsigned int maxLen) {
+chemin_t init_chemin(unsigned int maxLen) {
   chemin_t ch;
-  coordonnee_t* chCoords = (coordonnee_t *) malloc(maxLen*sizeof(int));
-  ch.coordonnees = chCoords;
-  ch.coordonnees[0].ligne=depart.ligne;
-  ch.coordonnees[0].colonne=depart.colonne;
-  ch.taille = 1;
+  ch.coordonnees = (coordonnee_t *) malloc(maxLen*sizeof(coordonnee_t));
+  ch.taille = 0;
   return ch;
 }
 
@@ -218,14 +160,12 @@ unsigned int minimumPossibles(labyrinthe lab, labyrinthe M2, unsigned int size, 
   unsigned int index = size*size;
   unsigned char caseRefuse = 0;
   for(int k=0; k<len; ++k) {
-    //printf("(%d,%d)\n", possibles[k].ligne, possibles[k].colonne);
     if((M2[posCourante.ligne][posCourante.colonne] >= M2[possibles[k].ligne][possibles[k].colonne]) || (M2[posCourante.ligne][posCourante.colonne] == 0)){
       if(index > M2[possibles[k].ligne][possibles[k].colonne])
         index = M2[possibles[k].ligne][possibles[k].colonne];
       caseRefuse = 0;
     }
   }
-  //printf("index min: %d , M2 : %d \n", index, M2[posCourante.ligne][posCourante.colonne]);
   return index;
 }
 
@@ -243,11 +183,11 @@ void tourbillonM2(labyrinthe lab, labyrinthe M2, unsigned int size, coordonnee_t
       signe = depl%2;
       if(signe==0)
         signe = -1;
+        
       for(int n=0; n<depl; ++n) {
         posCourante.colonne+=signe;
           if(((posCourante.colonne >= 0) && (posCourante.colonne < size)) && ((posCourante.ligne >= 0) && (posCourante.ligne < size))) {
             if(lab[posCourante.ligne][posCourante.colonne] != 1) {
-              //printf("Depl: %d, Case: (%d,%d)\n", depl, posCourante.ligne, posCourante.colonne);
               len = deplacementsPossibles(lab, size, size, posCourante, possibles);
               index = minimumPossibles(lab, M2, size, possibles, len, posCourante);
               if(M2[posCourante.ligne][posCourante.colonne]!=index+1){
@@ -255,13 +195,12 @@ void tourbillonM2(labyrinthe lab, labyrinthe M2, unsigned int size, coordonnee_t
                 cpt++;
               }
           }
-      }
+        }
       }
       for(int n=0; n<depl; ++n) {
         posCourante.ligne+=signe;
         if(((posCourante.colonne >= 0) && (posCourante.colonne < size)) && ((posCourante.ligne >= 0) && (posCourante.ligne < size))) {
           if(lab[posCourante.ligne][posCourante.colonne] != 1) {
-            //printf("Depl: %d, Case: (%d,%d)\n", depl, posCourante.ligne, posCourante.colonne);
             len = deplacementsPossibles(lab, size, size, posCourante, possibles);
             index = minimumPossibles(lab, M2, size, possibles, len, posCourante);
             if(M2[posCourante.ligne][posCourante.colonne]!=index+1) {
@@ -271,11 +210,8 @@ void tourbillonM2(labyrinthe lab, labyrinthe M2, unsigned int size, coordonnee_t
           }
         }
       }
-      //afficherMatrice(M2, size, size);
-      //printf("\n");
     }
     if(cpt==0) {
-      //printf("RACCOURCI de: %d", repet);
       return;
     }
   }
@@ -310,87 +246,79 @@ chemin_t wayToExit(labyrinthe lab, labyrinthe M2, unsigned int largeur, unsigned
     }
   }
   if(cpt>0) {
-    if(M2[coordPossible[0].ligne][coordPossible[0].colonne] == 0)
-      return incrChemin(ch, coordPossible[0]);
     ch = incrChemin(ch, coordPossible[0]);
+    if(M2[coordPossible[0].ligne][coordPossible[0].colonne] == 0) {
+      return ch;
+    }
     return wayToExit(lab, M2, largeur, longueur, ch);
-  }
-  else 
-    printf("MARCHE PAS");
-  
+  } 
 }
 
 chemin_t plusCourtCheminDynamique (labyrinthe lab, labyrinthe M2, unsigned int largeur, unsigned int longueur, coordonnee_t depart) {
   M2[depart.ligne][depart.colonne] = 0;
   tourbillonM2(lab, M2, largeur, depart);
   coordonnee_t posExit = smallestExit(lab, M2, largeur);
-  printf("\nPlus petite sortie: (%d,%d)\n", posExit.ligne, posExit.colonne);
-  chemin_t chemin = init_chemin(posExit, M2[posExit.ligne][posExit.colonne]+1);
+  chemin_t chemin = init_chemin(M2[posExit.ligne][posExit.colonne]+1);
+  chemin = incrChemin(chemin, posExit);
   chemin = wayToExit(lab, M2, largeur, longueur, chemin);
-  afficherChemin(chemin);
-  return;
+  return chemin;
 }
 
-
-/*chemin_t plusCourtCheminDynamique (labyrinthe lab, labyrinthe M2, unsigned int largeur, unsigned int longueur, coordonnee_t depart) {
-  parcourirM2(lab, M2, largeur, depart);
-  return;
+chemin_t copyChTab(chemin_t copy, chemin_t ch) {
+  copy.taille = ch.taille;
+  for(int k=0; k<ch.taille; k++) {
+    copy.coordonnees[k].ligne = ch.coordonnees[k].ligne;
+    copy.coordonnees[k].colonne = ch.coordonnees[k].colonne;
+  }
+  return copy;
 }
-*/
 
-void wayToExitAll(labyrinthe lab, labyrinthe M2, unsigned int largeur, unsigned int longueur, chemin_t ch, coordonnee_t** coordTab, unsigned int* tailleTab, unsigned int indexTab) {  // LA POSITION COURANTE EST CH[-1]
+chTab_t wayToExitAll(labyrinthe lab, labyrinthe M2, unsigned int largeur, unsigned int longueur, int maxLen, chTab_t allChemin) {
   coordonnee_t* coordPossible = (coordonnee_t *) malloc(8*sizeof(int));
-  int posLigne = ch.coordonnees[ch.taille-1].ligne;
-  int posColonne = ch.coordonnees[ch.taille-1].colonne;
-  //printf("(%d,%d) - ", posLigne, posColonne);
-  if(M2[posLigne][posColonne] == 0) {
-    //afficherChemin(ch);
-    //printf("\n ch.taille:%d \n", ch.taille);
-    int cpt = ch.taille-1;
-    for(int k=0; k<ch.taille; ++k) {
-      coordTab[indexTab][cpt] = ch.coordonnees[k];
-      //printf("Classified:(%d,%d) en indice:%d\n", coordTab[indexTab][cpt].ligne, coordTab[indexTab][cpt].colonne, cpt);
-      cpt--;
-    }
-    tailleTab[indexTab++] = ch.taille;
-    return;
-  }
-  int len = deplacementsPossibles(lab, largeur, longueur, ch.coordonnees[ch.taille-1], coordPossible);
-  unsigned int cpt = 0;
-  for(int k=0; k<len; ++k) {
-    if(M2[coordPossible[k].ligne][coordPossible[k].colonne] == M2[posLigne][posColonne]-1) {
-      coordPossible[cpt++] = coordPossible[k];
-      //printf("\nTEMP(%d,%d)\n", coordPossible[k].ligne, coordPossible[k].colonne);
-    }
-  }
-  ch.taille++;
-  for(int l=0; l<cpt; ++l) {
-    ch.coordonnees[ch.taille-1] = coordPossible[l];
-    wayToExitAll(lab, M2, largeur, longueur, ch, coordTab, tailleTab, 0);
-  }
+  int actualIndex = maxLen-1;
+  unsigned int cpt;
+  unsigned int len;
+  int preSizeChemin;
+  while(actualIndex>=0) {
+    preSizeChemin = allChemin.size;
+    for(int nbCh=0; nbCh<preSizeChemin; nbCh++) {
+      len = deplacementsPossibles(lab, largeur, longueur, allChemin.chList[nbCh].coordonnees[allChemin.chList[nbCh].taille-1], coordPossible);  
+      cpt=0;
+      for(int t=0; t<len; ++t) {
+        if(M2[coordPossible[t].ligne][coordPossible[t].colonne] == actualIndex)
+          coordPossible[cpt++] = coordPossible[t];
+      }
   
+      allChemin.chList[nbCh].coordonnees[allChemin.chList[nbCh].taille++] = coordPossible[0];  //ASSIGN COORDPOSSIBLE[0]
+
+      if(cpt>1) {
+        for(int a=1; a<cpt; ++a) {
+          allChemin.chList[allChemin.size] = copyChTab(allChemin.chList[allChemin.size], allChemin.chList[nbCh]);  //DUPLICATION DE LA TABLE nbCh
+          allChemin.size++;
+          allChemin.chList[allChemin.size-1].coordonnees[allChemin.chList[nbCh].taille-1].ligne = coordPossible[a].ligne;
+          allChemin.chList[allChemin.size-1].coordonnees[allChemin.chList[nbCh].taille-1].colonne = coordPossible[a].colonne;
+        }
+      }
+    }
+    actualIndex--;
+  }
+  return allChemin;
 }
+
 
 chemin_t* tousPlusCourtsChemins(labyrinthe lab, labyrinthe M2, unsigned int largeur, unsigned int longueur, coordonnee_t depart){
   M2[depart.ligne][depart.colonne] = 0;
   tourbillonM2(lab, M2, largeur, depart);
   coordonnee_t posExit = smallestExit(lab, M2, largeur);
-  printf("\nPlus petite sortie: (%d,%d)\n", posExit.ligne, posExit.colonne);
-  
-  coordonnee_t** coordTab = (coordonnee_t **) malloc(2*longueur*sizeof(coordonnee_t*));
-  for(int i=0; i<largeur*longueur; ++i)
-    coordTab[i] = (coordonnee_t *) malloc(largeur*longueur*sizeof(int));
-  int* tailleTab = (int *) malloc(largeur*longueur*sizeof(int));
-  chemin_t tempCh = init_chemin(posExit, M2[posExit.ligne][posExit.colonne]+1);
-  
-  afficherMatrice(M2, largeur, longueur);
+  chTab_t allChemin;
+  allChemin.chList = (chemin_t *) malloc((M2[posExit.ligne][posExit.colonne]+1)*sizeof(chemin_t));
+  for(int k=0; k<(M2[posExit.ligne][posExit.colonne]+1); ++k) {
+    allChemin.chList[k] = init_chemin(M2[posExit.ligne][posExit.colonne]+1);
+  }
+  allChemin.size = 1;
+  allChemin.chList[0].coordonnees[0] = posExit;
+  allChemin.chList[0].taille = 1;
   printf("\n");
-  wayToExitAll(lab, M2, largeur, longueur, tempCh, coordTab, tailleTab, 0);
-  
-  return;
+  allChemin = wayToExitAll(lab, M2, largeur, longueur, M2[posExit.ligne][posExit.colonne], allChemin);
+  return allChemin.chList;
 }
-
-
-
-// VERIFICATION FUTURES:
-// VERIFIER POUR MATRICE 1X1 , 2X2, 3X3.
